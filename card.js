@@ -9,6 +9,7 @@ export class Card {
     red;
     position;
     name;
+    callback;
 
     constructor(suit, face, faceNumber, card) {
         this.suit = suit;
@@ -18,12 +19,17 @@ export class Card {
 
         this.card = card;
         this.name = this.card.name;
-        //this.card.rotateX(Math.PI);
+        this.card.rotateX(Math.PI);
     }
 
     flip() {
-        this.up = !this.up; // true
+        this.up = !this.up;
         this.card.rotateX(Math.PI);
+    }
+
+    move(position) {
+        this.position = position;
+        this.card.position.set(position.x, position.y, position.z);
     }
 
     static GetFace(i) {

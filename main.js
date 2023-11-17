@@ -5,6 +5,9 @@ import { Positions } from './positions';
 import { Card } from './card';
 import { Deck } from './deck';
 import { Suit } from './suit';
+import { Column } from './column';
+import { Foundation } from './foundation';
+import { createTable } from './table';
 
 const width = 1200, 
     height = 800, 
@@ -31,41 +34,60 @@ var positions = new Positions(width, height);
 const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 2000);
 camera.position.z = cameraHeight;
 
-var deck = new Deck();
-var originalDeck;
-// var controls;
-// controls = new DragControls( [ ... objects ], camera, renderer.domElement );
-// controls.addEventListener( 'drag', drag );
+var deck;
+var originalDeck = new Deck();
+var columns = [
+    new Column(0, positions.column1),
+    new Column(1, positions.column2),
+    new Column(2, positions.column3),
+    new Column(3, positions.column4),
+    new Column(4, positions.column5),
+    new Column(5, positions.column6),
+    new Column(6, positions.column7)
+];
+var foundations = [
+    new Foundation(0, positions.foundation1),
+    new Foundation(1, positions.foundation2),
+    new Foundation(2, positions.foundation3),
+    new Foundation(3, positions.foundation4)
+];
+
+createTable(scene, positions, lightHeight);
 const loader = new GLTFLoader();
 loader.load('Deck_of_Cards.glb', loadCards, undefined, err => console.error(err));
-// loader.load('bicycle_card_blue.glb', function (gltf) {
-//     console.log(gltf);
-//     gltf.scene.rotateX(Math.PI / 2);
-//     scene.add(gltf.scene);
-// }, undefined, err => console.error(err));
 
 document.addEventListener( 'click', onClick );
 
 
 function startGame() {
-    //scene.clear();
-    
-    createTable();
-    // Reset card locations?
-
-    deck.cards.forEach((card) =>{
-        positions.set(card, positions.stockpile);
+    originalDeck.shuffle();
+    deck = new Deck();
+    originalDeck.cards.forEach((card, index) => deck.cards[index] = card);
+    deck.cards.forEach(card => {
+        if (card.up) card.flip();
+        card.move(positions.stockpile);
     });
+    columns.forEach(column => column.cards = []);
+    foundations.forEach(foundation => foundation.cards = []);
     
-    let card = deck.cards.shift();
-    //card.flip();
-    positions.set(card, positions.column1);
-    // TODO: Raise top stockpile
+    // Deal cards
+    for (let j = 0; j < 7; j++) {
+        for (let i = j; i < 7; i++) {
+            dealCard(columns[i], i === j);
+        }
+    }
+    columns.forEach(column => column.recalculate());
+}
+
+function dealCard(column, flip) {
+    const card = deck.cards.shift();
+    if (flip) card.flip();
+    column.cards.push(card);
 }
 
 var loaded = function() {
+    render();
     loading = false;
-    animate();
     startGame();
 }
 
@@ -76,7 +98,7 @@ var loadCard = function(gltf, face, faceNumber, suit) {
     }
     
     cardObjects.push(cardScene);
-    deck.cards.push(new Card(suit, face, faceNumber, cardScene));
+    originalDeck.cards.push(new Card(suit, face, faceNumber, cardScene));
 }
 
 function loadCards(gltf) {
@@ -90,30 +112,11 @@ function loadCards(gltf) {
         });
     });
 
-    originalDeck = JSON.parse(JSON.stringify(deck));
-
     loaded();
 }
 
-function createTable() {
-    const geometry = new THREE.BoxGeometry( width/2.05, height/2.05, 1 );
-    const material = new THREE.MeshBasicMaterial( { color: 0x078c11 } );
-    const cube = new THREE.Mesh( geometry, material );
-    cube.translateZ(-10);
-    scene.add( cube );
-
-    const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.85 );
-    directionalLight.position.z = lightHeight;
-    scene.add( directionalLight );
-}
-
-function drag(a) {
-    console.log('drag');
-    selectedCard = a.object;
-}
-
-function animate() {
-	requestAnimationFrame(animate);
+function render() {
+	requestAnimationFrame(render);
 	renderer.render(scene, camera);
 }
 
@@ -127,9 +130,9 @@ function onClick(event) {
 
     const intersections = raycaster.intersectObjects( cardObjects, true );
     selectedCard = undefined;
-    console.log(intersections);
+    //console.log(intersections);
     intersections.every((obj) => {
-        console.log(obj.object.name);
+        //console.log(obj.object.name);
         const card = originalDeck.cards.find(card => card.name === obj.object.name);
         if (card) {
             selectedCard = card;
@@ -146,11 +149,11 @@ function onClick(event) {
 }
 
 function placeCard(card, intersections) {
-    console.log('placeCard', card);
+    //console.log('placeCard', card);
     let obj;
     intersections.forEach(o => {
         if (obj) return;
-        console.log(o);
+        //console.log(o);
     });
     //card.flip();
 }

@@ -1,22 +1,13 @@
-import { Card } from "./card";
-import { Suit } from "./suit";
-
 export class Deck {
     cards = [];
+    discard = [];
+    originalOrder
 
     constructor() {
     }
 
     shuffle() {
-        this.cards = [];
-
-        Object.values(Suit).forEach(suit => {
-            for (let i = 1; i <= 14; i++) {
-                this.cards.push(new Card(suit, i));
-            }
-        })
-
-        for (let i = 0; i < Math.max(Math.random() * 10, 1); i++) {
+        for (let i = 0; i < Math.max(Math.random() * 10, 3); i++) {
             this.cards = this.cards.sort(() => Math.random() - 0.5);
         }
     }
