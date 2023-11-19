@@ -82,7 +82,7 @@ function startGame() {
 function dealCard(column, flip) {
     const card = deck.cards.shift();
     if (flip) card.flip();
-    column.cards.push(card);
+    column.cards.unshift(card);
 }
 
 var loaded = function() {

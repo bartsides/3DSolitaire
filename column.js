@@ -27,8 +27,6 @@ export class Column {
         let zSpacer = .5;
         for (let i = 0; i < this.cards.length; i++) {
             const card = this.cards[i];
-            if (i === 0 && !card.up) card.flip();
-            else if (i !== 0 && card.up) card.flip();
 
             card.move({
                 x: this.position.x, 
