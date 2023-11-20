@@ -1,8 +1,8 @@
 var Suit = {
-    Hearts: 'Hearts',
-    Diamonds: 'Diamonds',
-    Clubs: 'Clubs',
-    Spades: 'Spades'
+  Hearts: "Hearts",
+  Diamonds: "Diamonds",
+  Clubs: "Clubs",
+  Spades: "Spades",
 };
 
-export { Suit }
+export { Suit };
