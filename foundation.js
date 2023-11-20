@@ -12,7 +12,7 @@ export class Foundation {
     this.position = position;
 
     this.mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(2.5, 2.8, 0.01),
+      new THREE.BoxGeometry(2.5, 3, 0.01),
       new THREE.MeshBasicMaterial({
         color: highlightZones ? 0xffffff : 0x078c11,
       })

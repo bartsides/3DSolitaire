@@ -2,20 +2,28 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { Card } from "./card";
 import { Deck } from "./deck";
+import { Stockpile } from "./stockpile";
 import { Suit } from "./suit";
 import { Column } from "./column";
 import { Foundation } from "./foundation";
 import { createTable } from "./table";
 
 const highlightZones = true,
+  viewProfile = false,
   width = 1200,
   height = 800,
   cameraHeight = 10,
   lightHeight = 100,
   cardScale = 1.3,
   columnSpacer = 2.2,
-  columnMeshSpacer = 3,
-  stockpile = { x: columnSpacer * 3, y: 0, z: -4 };
+  columnMeshSpacer = 3;
+
+var scene = new THREE.Scene();
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(width, height);
+renderer.shadowMap.enabled = true;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
 
 var faces = [
     "2",
@@ -34,24 +42,22 @@ var faces = [
   ],
   suits = [Suit.Clubs, Suit.Diamonds, Suit.Hearts, Suit.Spades],
   loading = true,
+  stockpile,
   columns = [],
   foundations = [],
-  deck = new Deck(),
   originalDeck = new Deck();
 
 const clickableObjects = [];
 const mouse = new THREE.Vector2(),
   raycaster = new THREE.Raycaster();
 
-var scene = new THREE.Scene();
-var renderer = new THREE.WebGLRenderer();
-renderer.setSize(width, height);
-renderer.shadowMap.enabled = true;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-document.body.appendChild(renderer.domElement);
-
 const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 2000);
-camera.position.z = cameraHeight;
+if (viewProfile) {
+  camera.position.set(0, -20, 3);
+  camera.rotateX(THREE.MathUtils.degToRad(70));
+} else {
+  camera.position.z = cameraHeight;
+}
 
 init();
 
@@ -59,12 +65,9 @@ function startGame() {
   loading = false;
 
   originalDeck.shuffle();
-  deck = new Deck();
+  const deck = new Deck();
   originalDeck.cards.forEach((card, index) => (deck.cards[index] = card));
-  deck.cards.forEach((card) => {
-    if (card.up) card.flip();
-    card.move(stockpile);
-  });
+  stockpile.reset(deck);
 
   columns.forEach((column) => (column.cards = []));
   foundations.forEach((foundation) => (foundation.cards = []));
@@ -80,7 +83,7 @@ function startGame() {
 }
 
 function dealCard(column, flip) {
-  const card = deck.cards.shift();
+  const card = stockpile.drawCard();
   if (flip) card.flip();
   column.cards.unshift(card);
 }
@@ -120,7 +123,7 @@ function init() {
     columns.push(column);
   });
 
-  let foundationMeshY = 5.5;
+  let foundationMeshY = 5.45;
   let foundationMeshZ = -0.5;
   for (let i = 0; i < 4; i++) {
     const foundation = new Foundation(
@@ -134,8 +137,15 @@ function init() {
     foundations.unshift(foundation);
   }
 
+  stockpile = new Stockpile(
+    { x: columnPositions[6].x, y: 0, z: -4 },
+    { x: columnMeshPositions[6], y: foundationMeshY, z: foundationMeshZ },
+    scene,
+    highlightZones
+  );
+  clickableObjects.push(stockpile.mesh);
+
   document.addEventListener("click", onClick);
-  document.addEventListener("wheel", onScroll, { passive: false });
 
   const loader = new GLTFLoader();
   loader.load(
@@ -187,9 +197,13 @@ function onClick(event) {
   raycaster.setFromCamera(mouse, camera);
 
   const intersections = raycaster.intersectObjects(clickableObjects, false);
-  console.log("intersections", intersections);
 
   intersections.every((obj) => {
+    if (obj.object.name === "stockpile") {
+      stockpileClicked();
+      return true;
+    }
+
     const foundation = foundations.find(
       (foundation) => foundation.name === obj.object.name
     );
@@ -206,6 +220,10 @@ function onClick(event) {
   });
 }
 
+function stockpileClicked() {
+  console.log("stockpile clicked", stockpile);
+}
+
 function foundationClicked(foundation) {
   console.log("foundation clicked", foundation);
 }
@@ -217,9 +235,4 @@ function columnClicked(column) {
       console.log("valid move", col.number, col.cards[0]);
     }
   });
-}
-
-function onScroll(event) {
-  console.log("onScroll", event);
-  event.preventDefault();
 }
