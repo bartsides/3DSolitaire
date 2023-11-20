@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { DragControls } from 'three/addons/controls/DragControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Positions } from './positions';
 import { Card } from './card';
@@ -13,7 +12,7 @@ const width = 1200,
     height = 800, 
     cameraHeight = 10, 
     lightHeight = 100, 
-    cardScale = 1;
+    cardScale = 1.3;
 
 var faces = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace'];
 var suits = [Suit.Clubs, Suit.Diamonds, Suit.Hearts, Suit.Spades];
@@ -60,6 +59,8 @@ document.addEventListener( 'click', onClick );
 
 
 function startGame() {
+    loading = false;
+
     originalDeck.shuffle();
     deck = new Deck();
     originalDeck.cards.forEach((card, index) => deck.cards[index] = card);
@@ -67,6 +68,7 @@ function startGame() {
         if (card.up) card.flip();
         card.move(positions.stockpile);
     });
+
     columns.forEach(column => column.cards = []);
     foundations.forEach(foundation => foundation.cards = []);
     
@@ -87,7 +89,6 @@ function dealCard(column, flip) {
 
 var loaded = function() {
     render();
-    loading = false;
     startGame();
 }
 
@@ -106,11 +107,11 @@ function loadCards(gltf) {
     gltf.scene.scale.set(cardScale, cardScale, cardScale);
     scene.add(gltf.scene);
 
-    suits.forEach(suit => {
-        faces.forEach((face, faceNumber) => {
-            loadCard(gltf, face, faceNumber + 1, suit);
-        });
-    });
+    suits.forEach(suit => 
+        faces.forEach((face, faceNumber) => 
+            loadCard(gltf, face, faceNumber + 1, suit)
+        )
+    );
 
     loaded();
 }
@@ -130,9 +131,8 @@ function onClick(event) {
 
     const intersections = raycaster.intersectObjects( cardObjects, true );
     selectedCard = undefined;
-    //console.log(intersections);
+
     intersections.every((obj) => {
-        //console.log(obj.object.name);
         const card = originalDeck.cards.find(card => card.name === obj.object.name);
         if (card) {
             selectedCard = card;
@@ -143,17 +143,16 @@ function onClick(event) {
     console.log('selectedCard', selectedCard);
 
     if (selectedCard) {
-        placeCard(selectedCard, intersections);
+        placeCard(selectedCard);
         selectedCard = undefined;
     }
 }
 
-function placeCard(card, intersections) {
-    //console.log('placeCard', card);
-    let obj;
-    intersections.forEach(o => {
-        if (obj) return;
-        //console.log(o);
+function placeCard(card) {
+    console.log('placeCard', card);
+    columns.forEach(col => {
+        if (col.number !== card.column && col.isValid(card)) {
+            console.log('valid move', col.number, col.cards[0]);
+        }
     });
-    //card.flip();
 }

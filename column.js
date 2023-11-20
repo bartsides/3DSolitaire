@@ -20,10 +20,16 @@ export class Column {
         if (this.cards.length) this.cards[0].flip();
     }
 
+    isValid(card) {
+        if (!this.cards?.length) return card.face === 'King';
+        const topCard = this.cards[0];
+        return topCard.red !== card.red && topCard.faceNumber - card.faceNumber === 1;
+    }
+
     recalculate() {
         if (!this.cards?.length) return;
 
-        let ySpacer = .1;
+        let ySpacer = .001;
         let zSpacer = .5;
         for (let i = 0; i < this.cards.length; i++) {
             const card = this.cards[i];
@@ -32,7 +38,7 @@ export class Column {
                 x: this.position.x, 
                 y: this.position.y + ySpacer*(this.cards.length - 1), 
                 z: this.position.z + zSpacer*(this.cards.length - i)
-            });
+            }, this.number);
         }
     }
 }
