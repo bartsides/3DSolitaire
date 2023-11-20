@@ -10,7 +10,7 @@ export class Card {
     position;
     name;
     callback;
-    column = undefined;
+    columnNumber = undefined;
 
     constructor(suit, face, faceNumber, card) {
         this.suit = suit;
@@ -28,10 +28,10 @@ export class Card {
         this.card.rotateX(Math.PI);
     }
 
-    move(position, column) {
+    move(position, columnNumber) {
         this.position = position;
         this.card.position.set(position.x, position.y, position.z);
-        this.column = column;
+        this.columnNumber = columnNumber;
     }
 
     static GetFace(i) {

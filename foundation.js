@@ -1,30 +1,44 @@
+import * as THREE from "three";
+
 export class Foundation {
-    cards = [];
-    number;
-    position;
+  cards = [];
+  number;
+  position;
+  mesh;
+  name;
 
-    constructor(number, position) {
-        this.number = number;
-        this.position = position;
-    }
+  constructor(number, position, meshPosition, scene, highlightZones) {
+    this.number = number;
+    this.position = position;
 
-    addCard(card) {
-        this.cards.unshift(card);
-        if (card.callback) card.callback(card);
-        card.callback = this.removeCard;
-        this.recalculate();
-    }
+    this.mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 2.8, 0.01),
+      new THREE.MeshBasicMaterial({
+        color: highlightZones ? 0xffffff : 0x078c11,
+      })
+    );
+    this.name = `foundation${number}`;
+    this.mesh.name = this.name;
+    this.mesh.position.set(meshPosition.x, meshPosition.y, meshPosition.z);
+    scene.add(this.mesh);
+  }
 
-    recalculate() {
-        let verticalSpacer = .5;
-        for (let i = 1; i < this.cards.length; i++) {
-            const card = this.cards[i];
-            card.card.position.set(this.position.x, this.position.y, this.position.z);
-        }
-    }
+  addCard(card) {
+    this.cards.unshift(card);
+    if (card.callback) card.callback(card);
+    card.callback = this.removeCard;
+    this.recalculate();
+  }
 
-    removeCard(card) {
-        this.cards.splice(this.cards.indexOf(card), 1);
-        if (this.cards.length) this.cards[0].flip();
+  recalculate() {
+    for (let i = 1; i < this.cards.length; i++) {
+      const card = this.cards[i];
+      card.move(this.position);
     }
+  }
+
+  removeCard(card) {
+    this.cards.splice(this.cards.indexOf(card), 1);
+    if (this.cards.length && !this.cards[0].up) this.cards[0].flip();
+  }
 }
