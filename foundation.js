@@ -6,6 +6,7 @@ export class Foundation {
   position;
   mesh;
   name;
+  suit;
 
   constructor(number, position, meshPosition, scene, highlightZones) {
     this.number = number;
@@ -24,6 +25,8 @@ export class Foundation {
   }
 
   addCard(card) {
+    if (!this.suit) this.suit = card.suit;
+
     this.cards.unshift(card);
     if (card.callback) card.callback(card);
     card.callback = this.removeCard;

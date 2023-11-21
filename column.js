@@ -46,8 +46,8 @@ export class Column {
   recalculate() {
     if (!this.cards?.length) return;
 
-    let ySpacer = 0.001;
-    let zSpacer = 0.5;
+    let ySpacer = 0.5;
+    let zSpacer = 0.001;
     for (let i = 0; i < this.cards.length; i++) {
       const card = this.cards[i];
 

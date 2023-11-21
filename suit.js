@@ -5,4 +5,6 @@ var Suit = {
   Spades: "Spades",
 };
 
-export { Suit };
+var Suits = [Suit.Clubs, Suit.Diamonds, Suit.Hearts, Suit.Spades];
+
+export { Suit, Suits };

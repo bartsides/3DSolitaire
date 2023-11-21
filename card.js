@@ -29,8 +29,9 @@ export class Card {
   }
 
   move(position, columnNumber) {
+    // Cards have y and z coordinates flipped. Correcting here.
     this.position = position;
-    this.card.position.set(position.x, position.y, position.z);
+    this.card.position.set(position.x, position.z, position.y);
     this.columnNumber = columnNumber;
   }
 

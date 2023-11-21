@@ -2,8 +2,9 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { Card } from "./card";
 import { Deck } from "./deck";
+import { Faces } from "./faces";
 import { Stockpile } from "./stockpile";
-import { Suit } from "./suit";
+import { Suits } from "./suit";
 import { Column } from "./column";
 import { Foundation } from "./foundation";
 import { createTable } from "./table";
@@ -15,8 +16,16 @@ const highlightZones = true,
   cameraHeight = 10,
   lightHeight = 100,
   cardScale = 1.3,
-  columnSpacer = 2.2,
+  columnSpacer = 2.3,
   columnMeshSpacer = 3;
+
+var faces = Faces,
+  suits = Suits,
+  loading = true,
+  stockpile,
+  columns = [],
+  foundations = [],
+  originalDeck = new Deck();
 
 var scene = new THREE.Scene();
 var renderer = new THREE.WebGLRenderer();
@@ -25,41 +34,105 @@ renderer.shadowMap.enabled = true;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
-var faces = [
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "Jack",
-    "Queen",
-    "King",
-    "Ace",
-  ],
-  suits = [Suit.Clubs, Suit.Diamonds, Suit.Hearts, Suit.Spades],
-  loading = true,
-  stockpile,
-  columns = [],
-  foundations = [],
-  originalDeck = new Deck();
-
 const clickableObjects = [];
 const mouse = new THREE.Vector2(),
   raycaster = new THREE.Raycaster();
 
 const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 2000);
 if (viewProfile) {
-  camera.position.set(0, -20, 3);
+  camera.position.set(0, -15, 3);
   camera.rotateX(THREE.MathUtils.degToRad(70));
 } else {
   camera.position.z = cameraHeight;
 }
 
 init();
+
+function init() {
+  createTable(scene, lightHeight);
+
+  let columnPositions = [
+    { x: -columnSpacer * 3, y: 0, z: -2 },
+    { x: -columnSpacer * 2, y: 0, z: -2 },
+    { x: -columnSpacer, y: 0, z: -2 },
+    { x: 0, y: 0, z: -2 },
+    { x: columnSpacer, y: 0, z: -2 },
+    { x: columnSpacer * 2, y: 0, z: -2 },
+    { x: columnSpacer * 3, y: 0, z: -2 },
+  ];
+  let columnMeshPositions = [
+    -columnMeshSpacer * 3,
+    -columnMeshSpacer * 2,
+    -columnMeshSpacer,
+    0,
+    columnMeshSpacer,
+    columnMeshSpacer * 2,
+    columnMeshSpacer * 3,
+  ];
+  columnPositions.forEach((pos, index) => {
+    const colPos = { x: pos.x, y: -2, z: 0.05 };
+    const meshPos = { x: columnMeshPositions[index], y: -1.5, z: 0 };
+    const column = new Column(index, colPos, meshPos, scene, highlightZones);
+    clickableObjects.push(column.mesh);
+    columns.push(column);
+  });
+
+  let foundationMeshY = 5.2;
+  let foundationMeshZ = 0;
+  for (let i = 0; i < 4; i++) {
+    const pos = columnPositions[i];
+    const meshPos = {
+      x: columnMeshPositions[i],
+      y: foundationMeshY,
+      z: foundationMeshZ,
+    };
+    const foundation = new Foundation(i, pos, meshPos, scene, highlightZones);
+    clickableObjects.push(foundation.mesh);
+    foundations.unshift(foundation);
+  }
+
+  stockpile = new Stockpile(
+    { x: columnPositions[6].x, y: -4, z: 0.05 },
+    { x: columnMeshPositions[6], y: foundationMeshY, z: foundationMeshZ },
+    scene,
+    highlightZones
+  );
+  clickableObjects.push(stockpile.mesh);
+
+  document.addEventListener("click", onClick);
+
+  const loader = new GLTFLoader();
+  loader.load("Deck_of_Cards.glb", loadCards, undefined, console.error);
+}
+
+function loadCards(gltf) {
+  gltf.scene.rotateX(Math.PI / 2);
+  gltf.scene.scale.set(cardScale, cardScale, cardScale);
+  scene.add(gltf.scene);
+
+  suits.forEach((suit) =>
+    faces.forEach((face, faceNumber) =>
+      loadCard(gltf, face, faceNumber + 1, suit)
+    )
+  );
+
+  loaded();
+}
+
+var loadCard = function (gltf, face, faceNumber, suit) {
+  const cardScene = gltf.scene.children.find(
+    (card) => card.name == `${face}of${suit}`
+  );
+
+  if (!cardScene) console.log("no card found", face, suit);
+
+  originalDeck.cards.push(new Card(suit, face, faceNumber, cardScene));
+};
+
+var loaded = function () {
+  render();
+  startGame();
+};
 
 function startGame() {
   loading = false;
@@ -87,101 +160,6 @@ function dealCard(column, flip) {
   if (flip) card.flip();
   column.cards.unshift(card);
 }
-
-function init() {
-  createTable(scene, lightHeight);
-
-  const colMeshY = -1.5;
-  const colMeshZ = -0.5;
-  let columnMeshPositions = [
-    -columnMeshSpacer * 3,
-    -columnMeshSpacer * 2,
-    -columnMeshSpacer,
-    0,
-    columnMeshSpacer,
-    columnMeshSpacer * 2,
-    columnMeshSpacer * 3,
-  ];
-  let columnPositions = [
-    { x: -columnSpacer * 3, y: 0, z: -2 },
-    { x: -columnSpacer * 2, y: 0, z: -2 },
-    { x: -columnSpacer, y: 0, z: -2 },
-    { x: 0, y: 0, z: -2 },
-    { x: columnSpacer, y: 0, z: -2 },
-    { x: columnSpacer * 2, y: 0, z: -2 },
-    { x: columnSpacer * 3, y: 0, z: -2 },
-  ];
-  columnPositions.forEach((pos, index) => {
-    const column = new Column(
-      index,
-      pos,
-      { x: columnMeshPositions[index], y: colMeshY, z: colMeshZ },
-      scene,
-      highlightZones
-    );
-    clickableObjects.push(column.mesh);
-    columns.push(column);
-  });
-
-  let foundationMeshY = 5.45;
-  let foundationMeshZ = -0.5;
-  for (let i = 0; i < 4; i++) {
-    const foundation = new Foundation(
-      i,
-      columnPositions[i],
-      { x: columnMeshPositions[i], y: foundationMeshY, z: foundationMeshZ },
-      scene,
-      highlightZones
-    );
-    clickableObjects.push(foundation.mesh);
-    foundations.unshift(foundation);
-  }
-
-  stockpile = new Stockpile(
-    { x: columnPositions[6].x, y: 0, z: -4 },
-    { x: columnMeshPositions[6], y: foundationMeshY, z: foundationMeshZ },
-    scene,
-    highlightZones
-  );
-  clickableObjects.push(stockpile.mesh);
-
-  document.addEventListener("click", onClick);
-
-  const loader = new GLTFLoader();
-  loader.load(
-    "Deck_of_Cards.glb",
-    (gltf) => {
-      gltf.scene.rotateX(Math.PI / 2);
-      gltf.scene.scale.set(cardScale, cardScale, cardScale);
-      scene.add(gltf.scene);
-
-      suits.forEach((suit) =>
-        faces.forEach((face, faceNumber) =>
-          loadCard(gltf, face, faceNumber + 1, suit)
-        )
-      );
-
-      loaded();
-    },
-    undefined,
-    (err) => console.error(err)
-  );
-}
-
-var loadCard = function (gltf, face, faceNumber, suit) {
-  const cardScene = gltf.scene.children.find(
-    (card) => card.name == `${face}of${suit}`
-  );
-
-  if (!cardScene) console.log("no card found", face, suit);
-
-  originalDeck.cards.push(new Card(suit, face, faceNumber, cardScene));
-};
-
-var loaded = function () {
-  render();
-  startGame();
-};
 
 function render() {
   requestAnimationFrame(render);
