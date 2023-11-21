@@ -23,10 +23,9 @@ export class Column {
     scene.add(this.mesh);
   }
 
-  addCard(card) {
+  addCard(card, source) {
     this.cards.unshift(card);
-    if (card.callback) card.callback(card);
-    card.callback = this.removeCard;
+    if (source) source.removeCard(card);
     this.recalculate();
   }
 
@@ -35,30 +34,23 @@ export class Column {
     if (this.cards.length) this.cards[0].flip();
   }
 
-  isValid(card) {
+  isValidPlay(card) {
     if (!this.cards?.length) return card.face === "King";
     const topCard = this.cards[0];
-    return (
-      topCard.red !== card.red && topCard.faceNumber - card.faceNumber === 1
-    );
+    return topCard.red !== card.red && topCard.rank - card.rank === 1;
   }
 
   recalculate() {
     if (!this.cards?.length) return;
 
     let ySpacer = 0.5;
-    let zSpacer = 0.001;
+    let zSpacer = 0.01;
     for (let i = 0; i < this.cards.length; i++) {
-      const card = this.cards[i];
-
-      card.move(
-        {
-          x: this.position.x,
-          y: this.position.y + ySpacer * (this.cards.length - i),
-          z: this.position.z + zSpacer * (this.cards.length - i),
-        },
-        this.number
-      );
+      this.cards[i].move({
+        x: this.position.x,
+        y: this.position.y + ySpacer * (this.cards.length - i),
+        z: this.position.z + zSpacer * (this.cards.length - i),
+      });
     }
   }
 }

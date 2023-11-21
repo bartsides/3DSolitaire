@@ -17,7 +17,13 @@ const highlightZones = true,
   lightHeight = 100,
   cardScale = 1.3,
   columnSpacer = 2.3,
-  columnMeshSpacer = 3;
+  columnMeshSpacer = 3,
+  clickableObjects = [],
+  mouse = new THREE.Vector2(),
+  raycaster = new THREE.Raycaster(),
+  scene = new THREE.Scene(),
+  renderer = new THREE.WebGLRenderer(),
+  camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 2000);
 
 var faces = Faces,
   suits = Suits,
@@ -27,38 +33,31 @@ var faces = Faces,
   foundations = [],
   originalDeck = new Deck();
 
-var scene = new THREE.Scene();
-var renderer = new THREE.WebGLRenderer();
-renderer.setSize(width, height);
-renderer.shadowMap.enabled = true;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-document.body.appendChild(renderer.domElement);
-
-const clickableObjects = [];
-const mouse = new THREE.Vector2(),
-  raycaster = new THREE.Raycaster();
-
-const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 2000);
-if (viewProfile) {
-  camera.position.set(0, -15, 3);
-  camera.rotateX(THREE.MathUtils.degToRad(70));
-} else {
-  camera.position.z = cameraHeight;
-}
-
 init();
 
 function init() {
+  renderer.setSize(width, height);
+  renderer.shadowMap.enabled = true;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  document.body.appendChild(renderer.domElement);
+
+  if (viewProfile) {
+    camera.position.set(0, -15, 3);
+    camera.rotateX(THREE.MathUtils.degToRad(70));
+  } else {
+    camera.position.z = cameraHeight;
+  }
+
   createTable(scene, lightHeight);
 
   let columnPositions = [
-    { x: -columnSpacer * 3, y: 0, z: -2 },
-    { x: -columnSpacer * 2, y: 0, z: -2 },
-    { x: -columnSpacer, y: 0, z: -2 },
-    { x: 0, y: 0, z: -2 },
-    { x: columnSpacer, y: 0, z: -2 },
-    { x: columnSpacer * 2, y: 0, z: -2 },
-    { x: columnSpacer * 3, y: 0, z: -2 },
+    -columnSpacer * 3,
+    -columnSpacer * 2,
+    -columnSpacer,
+    0,
+    columnSpacer,
+    columnSpacer * 2,
+    columnSpacer * 3,
   ];
   let columnMeshPositions = [
     -columnMeshSpacer * 3,
@@ -69,18 +68,20 @@ function init() {
     columnMeshSpacer * 2,
     columnMeshSpacer * 3,
   ];
-  columnPositions.forEach((pos, index) => {
-    const colPos = { x: pos.x, y: -2, z: 0.05 };
-    const meshPos = { x: columnMeshPositions[index], y: -1.5, z: 0 };
-    const column = new Column(index, colPos, meshPos, scene, highlightZones);
+  columnPositions.forEach((pos, i) => {
+    const colPos = { x: pos, y: -2, z: 0.05 };
+    const meshPos = { x: columnMeshPositions[i], y: -1.5, z: 0 };
+    const column = new Column(i, colPos, meshPos, scene, highlightZones);
     clickableObjects.push(column.mesh);
     columns.push(column);
   });
 
+  let foundationY = -4;
+  let foundationZ = 0.05;
   let foundationMeshY = 5.2;
   let foundationMeshZ = 0;
   for (let i = 0; i < 4; i++) {
-    const pos = columnPositions[i];
+    const pos = { x: columnPositions[i], y: foundationY, z: foundationZ };
     const meshPos = {
       x: columnMeshPositions[i],
       y: foundationMeshY,
@@ -88,16 +89,16 @@ function init() {
     };
     const foundation = new Foundation(i, pos, meshPos, scene, highlightZones);
     clickableObjects.push(foundation.mesh);
-    foundations.unshift(foundation);
+    foundations.push(foundation);
   }
 
   stockpile = new Stockpile(
-    { x: columnPositions[6].x, y: -4, z: 0.05 },
+    { x: columnPositions[6], y: foundationY, z: foundationZ },
     { x: columnMeshPositions[6], y: foundationMeshY, z: foundationMeshZ },
     scene,
     highlightZones
   );
-  clickableObjects.push(stockpile.mesh);
+  clickableObjects.push(stockpile.mesh, stockpile.wasteMesh);
 
   document.addEventListener("click", onClick);
 
@@ -111,22 +112,20 @@ function loadCards(gltf) {
   scene.add(gltf.scene);
 
   suits.forEach((suit) =>
-    faces.forEach((face, faceNumber) =>
-      loadCard(gltf, face, faceNumber + 1, suit)
-    )
+    faces.forEach((face, rank) => loadCard(gltf, face, rank + 1, suit))
   );
 
   loaded();
 }
 
-var loadCard = function (gltf, face, faceNumber, suit) {
+var loadCard = function (gltf, face, rank, suit) {
   const cardScene = gltf.scene.children.find(
     (card) => card.name == `${face}of${suit}`
   );
 
   if (!cardScene) console.log("no card found", face, suit);
 
-  originalDeck.cards.push(new Card(suit, face, faceNumber, cardScene));
+  originalDeck.cards.push(new Card(suit, face, rank, cardScene));
 };
 
 var loaded = function () {
@@ -139,11 +138,11 @@ function startGame() {
 
   originalDeck.shuffle();
   const deck = new Deck();
-  originalDeck.cards.forEach((card, index) => (deck.cards[index] = card));
+  originalDeck.cards.forEach((card, i) => (deck.cards[i] = card));
   stockpile.reset(deck);
 
-  columns.forEach((column) => (column.cards = []));
-  foundations.forEach((foundation) => (foundation.cards = []));
+  columns.forEach((c) => (c.cards = []));
+  foundations.forEach((f) => (f.cards = []));
 
   // Deal cards
   for (let j = 0; j < 7; j++) {
@@ -152,13 +151,15 @@ function startGame() {
     }
   }
 
-  columns.forEach((column) => column.recalculate());
+  columns.forEach((c) => c.recalculate());
+
+  stockpileClicked();
 }
 
 function dealCard(column, flip) {
   const card = stockpile.drawCard();
   if (flip) card.flip();
-  column.cards.unshift(card);
+  column.addCard(card);
 }
 
 function render() {
@@ -175,31 +176,43 @@ function onClick(event) {
   raycaster.setFromCamera(mouse, camera);
 
   const intersections = raycaster.intersectObjects(clickableObjects, false);
+  for (let i = 0; i < intersections.length; i++) {
+    const obj = intersections[i];
+    const name = obj.object.name;
 
-  intersections.every((obj) => {
-    if (obj.object.name === "stockpile") {
+    if (name === "stockpile") {
       stockpileClicked();
-      return true;
+      return;
+    }
+    if (name === "waste") {
+      wasteClicked();
+      return;
     }
 
-    const foundation = foundations.find(
-      (foundation) => foundation.name === obj.object.name
-    );
+    const foundation = foundations.find((f) => f.name === name);
     if (foundation) {
       foundationClicked(foundation);
-      return true;
+      return;
     }
 
-    const column = columns.find((column) => column.name === obj.object.name);
+    const column = columns.find((c) => c.name === name);
     if (column) {
       columnClicked(column);
-      return true;
+      return;
     }
-  });
+  }
 }
 
 function stockpileClicked() {
   console.log("stockpile clicked", stockpile);
+  stockpile.drawCards();
+}
+
+function wasteClicked() {
+  console.log("waste clicked", stockpile.waste);
+  if (!stockpile?.waste?.length) return;
+
+  playCard(stockpile.waste[0], stockpile);
 }
 
 function foundationClicked(foundation) {
@@ -207,10 +220,46 @@ function foundationClicked(foundation) {
 }
 
 function columnClicked(column) {
-  console.log("column clicked", column);
+  for (let i = column.cards.length - 1; i >= 0; i--) {
+    const card = column.cards[i];
+    if (!card.up) continue;
+
+    let remainder = [];
+    for (let j = i; j >= 0; j--) remainder.push(card);
+
+    playCard(card, column, remainder);
+  }
+}
+
+function playCard(card, source, remainder) {
+  if (!remainder?.length) {
+    const foundation = findFoundation(card);
+    if (foundation?.isValidPlay(card)) {
+      foundation.addCard(card, source);
+      return;
+    }
+  }
+
   columns.forEach((col) => {
-    if (col.number !== column.column && col.isValid(column)) {
-      console.log("valid move", col.number, col.cards[0]);
+    if (col.isValidPlay(card)) {
+      col.addCard(card, source);
+
+      if (!remainder?.length) return;
+
+      for (let i = 0; i < remainder.length; i++) {
+        col.addCard(remainder[i], source);
+      }
+      return;
     }
   });
+}
+
+function findFoundation(card) {
+  // Check foundations that are set
+  let foundation = foundations.find((f) => f.suit === card.suit);
+  if (foundation) return foundation;
+
+  for (let i = 0; i < foundations.length; i++) {
+    if (!foundations[i].suit) return foundations[i];
+  }
 }

@@ -3,19 +3,18 @@ import { Suit } from "./suit";
 export class Card {
   suit;
   face;
-  faceNumber;
+  rank;
   card;
   up = false;
   red;
   position;
   name;
   callback;
-  columnNumber = undefined;
 
-  constructor(suit, face, faceNumber, card) {
+  constructor(suit, face, rank, card) {
     this.suit = suit;
     this.face = face;
-    this.faceNumber = faceNumber;
+    this.rank = rank;
     this.red = this.suit === Suit.Diamonds || this.suit === Suit.Hearts;
 
     this.card = card;
@@ -28,11 +27,10 @@ export class Card {
     this.card.rotateX(Math.PI);
   }
 
-  move(position, columnNumber) {
+  move(position) {
     // Cards have y and z coordinates flipped. Correcting here.
     this.position = position;
     this.card.position.set(position.x, position.z, position.y);
-    this.columnNumber = columnNumber;
   }
 
   static GetFace(i) {

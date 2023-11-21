@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { Faces } from "./faces";
 
 export class Foundation {
   cards = [];
@@ -24,19 +25,31 @@ export class Foundation {
     scene.add(this.mesh);
   }
 
-  addCard(card) {
+  addCard(card, source) {
     if (!this.suit) this.suit = card.suit;
 
     this.cards.unshift(card);
-    if (card.callback) card.callback(card);
-    card.callback = this.removeCard;
+    if (source) source.removeCard(card);
     this.recalculate();
   }
 
+  isValidPlay(card) {
+    if (!this.suit && card.face === Faces[0]) return true;
+    return this.suit === card.suit && card.rank - this.cards[0].rank === 1;
+  }
+
   recalculate() {
-    for (let i = 1; i < this.cards.length; i++) {
+    for (let i = 0; i < this.cards.length; i++) {
       const card = this.cards[i];
-      card.move(this.position);
+      if (i === 0) {
+        card.move({
+          x: this.position.x,
+          y: this.position.y,
+          z: this.position.z + 0.01,
+        });
+      } else {
+        card.move(this.position);
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 var Faces = [
+  "Ace",
   "2",
   "3",
   "4",
@@ -11,7 +12,6 @@ var Faces = [
   "Jack",
   "Queen",
   "King",
-  "Ace",
 ];
 
 export { Faces };
