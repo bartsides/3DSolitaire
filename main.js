@@ -9,8 +9,9 @@ import { Column } from "./column";
 import { Foundation } from "./foundation";
 import { createTable } from "./table";
 
-const highlightZones = true,
+const highlightZones = false,
   viewProfile = false,
+  cardsDrawn = 1,
   width = 1200,
   height = 800,
   cameraHeight = 10,
@@ -96,7 +97,8 @@ function init() {
     { x: columnPositions[6], y: foundationY, z: foundationZ },
     { x: columnMeshPositions[6], y: foundationMeshY, z: foundationMeshZ },
     scene,
-    highlightZones
+    highlightZones,
+    cardsDrawn
   );
   clickableObjects.push(stockpile.mesh, stockpile.wasteMesh);
 
@@ -123,7 +125,7 @@ var loadCard = function (gltf, face, rank, suit) {
     (card) => card.name == `${face}of${suit}`
   );
 
-  if (!cardScene) console.log("no card found", face, suit);
+  if (!cardScene) console.error("no card found", face, suit);
 
   originalDeck.cards.push(new Card(suit, face, rank, cardScene));
 };
@@ -204,54 +206,103 @@ function onClick(event) {
 }
 
 function stockpileClicked() {
-  console.log("stockpile clicked", stockpile);
   stockpile.drawCards();
 }
 
 function wasteClicked() {
-  console.log("waste clicked", stockpile.waste);
   if (!stockpile?.waste?.length) return;
-
-  playCard(stockpile.waste[0], stockpile);
+  playCards([stockpile.waste[0]], stockpile);
 }
 
 function foundationClicked(foundation) {
-  console.log("foundation clicked", foundation);
+  if (!foundation?.cards?.length) return;
+  playCards([foundation.cards[0]], foundation);
 }
 
 function columnClicked(column) {
   for (let i = column.cards.length - 1; i >= 0; i--) {
-    const card = column.cards[i];
-    if (!card.up) continue;
+    if (!column.cards[i].up) continue;
 
-    let remainder = [];
-    for (let j = i; j >= 0; j--) remainder.push(card);
+    const cards = [];
+    for (let j = i; j >= 0; j--) cards.push(column.cards[j]);
 
-    playCard(card, column, remainder);
+    playCards(cards, column);
+    return;
   }
 }
 
-function playCard(card, source, remainder) {
-  if (!remainder?.length) {
-    const foundation = findFoundation(card);
-    if (foundation?.isValidPlay(card)) {
-      foundation.addCard(card, source);
-      return;
-    }
+function playCards(cards, source) {
+  let plays = findPlays(cards, source);
+  console.log("plays", plays);
+  if (!plays.foundation && !plays.columnPlays.length) return;
+  console.log("plays found", plays);
+
+  // TODO: Smarter logic on which action to take
+  // TODO: Handle scenario where best play is to move top / last card to foundation
+  let destination,
+    selectedCards = [];
+
+  if (plays.foundation) {
+    destination = plays.foundation;
+    selectedCards = [cards[cards.length - 1]];
+  } else {
+    let columnPlay = plays.columnPlays[0];
+    destination = columnPlay.column;
+    selectedCards = columnPlay.cards;
   }
 
-  columns.forEach((col) => {
-    if (col.isValidPlay(card)) {
-      col.addCard(card, source);
+  if (destination) {
+    applyPlay(selectedCards, source, destination);
+  } else {
+    console.error("unable to determine move", selectedPlay);
+  }
+}
 
-      if (!remainder?.length) return;
+function applyPlay(cards, source, destination) {
+  for (let i = 0; i < cards.length; i++) {
+    destination.addCard(cards[i]);
+    source.removeCard(cards[i]);
+  }
+}
 
-      for (let i = 0; i < remainder.length; i++) {
-        col.addCard(remainder[i], source);
+function findPlays(cards, source) {
+  let foundation,
+    columnPlays = [];
+
+  // Only top card can move to foundation
+  const topCard = cards[cards.length - 1];
+  let f = findFoundation(topCard);
+  if (f && f.name !== source.name && f.isValidPlay(topCard)) {
+    foundation = f;
+  }
+
+  for (let i = 0; i < cards.length; i++) {
+    let cols = [],
+      card = cards[i];
+
+    console.log(i, card, cards);
+
+    columns.forEach((col) => {
+      if (col.name !== source.name && col.isValidPlay(card)) {
+        cols.push(col);
       }
-      return;
-    }
-  });
+    });
+
+    if (!cols.length) continue;
+
+    let selectedCards = [];
+    for (let j = cards.length - 1; j >= i; j--) selectedCards.unshift(cards[j]);
+    console.log("selectedCards", i, selectedCards, cards);
+
+    cols.forEach((col) =>
+      columnPlays.push({
+        column: col,
+        cards: selectedCards,
+      })
+    );
+  }
+
+  return { foundation, columnPlays };
 }
 
 function findFoundation(card) {

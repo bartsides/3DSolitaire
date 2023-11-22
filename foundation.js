@@ -25,17 +25,20 @@ export class Foundation {
     scene.add(this.mesh);
   }
 
-  addCard(card, source) {
-    if (!this.suit) this.suit = card.suit;
-
-    this.cards.unshift(card);
-    if (source) source.removeCard(card);
-    this.recalculate();
-  }
-
   isValidPlay(card) {
     if (!this.suit && card.face === Faces[0]) return true;
     return this.suit === card.suit && card.rank - this.cards[0].rank === 1;
+  }
+
+  addCard(card) {
+    if (!this.suit) this.suit = card.suit;
+    this.cards.unshift(card);
+    this.recalculate();
+  }
+
+  removeCard(card) {
+    this.cards.splice(this.cards.indexOf(card), 1);
+    this.recalculate();
   }
 
   recalculate() {
@@ -51,10 +54,5 @@ export class Foundation {
         card.move(this.position);
       }
     }
-  }
-
-  removeCard(card) {
-    this.cards.splice(this.cards.indexOf(card), 1);
-    if (this.cards.length && !this.cards[0].up) this.cards[0].flip();
   }
 }

@@ -1,21 +1,24 @@
 import * as THREE from "three";
 
 export class Stockpile {
+  name = "stockpile";
   deck;
   position;
   mesh;
   wasteMesh;
   waste = [];
+  cardsDrawn;
 
-  constructor(position, meshPosition, scene, highlightZones) {
+  constructor(position, meshPosition, scene, highlightZones, cardsDrawn) {
     this.position = position;
+    this.cardsDrawn = cardsDrawn;
 
     const color = highlightZones ? 0xffffff : 0x078c11;
     this.mesh = new THREE.Mesh(
       new THREE.BoxGeometry(2.5, 3, 0.01),
       new THREE.MeshBasicMaterial({ color: color })
     );
-    this.mesh.name = "stockpile";
+    this.mesh.name = this.name;
     this.mesh.position.set(meshPosition.x, meshPosition.y, meshPosition.z);
     scene.add(this.mesh);
 
@@ -33,6 +36,7 @@ export class Stockpile {
   }
 
   drawCards() {
+    // TODO: Add discard
     this.waste.forEach((card) => {
       this.deck.cards.push(card);
       card.move(this.position);
@@ -40,7 +44,8 @@ export class Stockpile {
     });
     this.waste = [];
 
-    for (let i = 0; i < Math.min(3, this.deck.cards.length); i++) {
+    const cardsToDraw = Math.min(this.cardsDrawn, this.deck.cards.length);
+    for (let i = 0; i < cardsToDraw; i++) {
       const card = this.drawCard();
       card.flip();
       this.waste.push(card);
@@ -67,6 +72,8 @@ export class Stockpile {
 
   removeCard(card) {
     this.waste.splice(this.waste.indexOf(card), 1);
+    // TODO: Alter to show previously drawn cards and add functionality to recreate stockpile from discard
+    if (!this.waste.length) this.drawCards();
   }
 
   reset(deck) {
