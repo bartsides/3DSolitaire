@@ -1,6 +1,10 @@
-import { Suit } from "./suit";
+import { Suit } from "../config/suit";
 
 export class Card {
+  rotations = {
+    up: 0,
+    down: Math.PI,
+  };
   suit;
   face;
   rank;
@@ -19,7 +23,7 @@ export class Card {
 
     this.card = card;
     this.name = this.card.name;
-    this.card.rotateX(Math.PI);
+    this.card.rotateX(this.rotations.down);
   }
 
   flip() {

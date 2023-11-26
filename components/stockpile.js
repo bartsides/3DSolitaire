@@ -1,8 +1,9 @@
 import * as THREE from "three";
+import { Deck } from "./deck";
 
 export class Stockpile {
   name = "stockpile";
-  deck;
+  deck = new Deck();
   position;
   mesh;
   wasteMesh;
@@ -77,7 +78,13 @@ export class Stockpile {
   }
 
   reset(deck) {
-    this.deck = deck;
+    this.deck.cards = [];
+    this.deck.discard = [];
+
+    for (let i = 0; i < deck.cards.length; i++) {
+      this.deck.cards[i] = deck.cards[i];
+    }
+
     this.deck.cards.forEach((card) => {
       if (card.up) card.flip();
       card.move(this.position);

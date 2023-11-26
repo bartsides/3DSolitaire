@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Faces } from "./faces";
+import { Faces } from "../config/faces";
 
 export class Foundation {
   cards = [];

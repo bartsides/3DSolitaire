@@ -1,7 +1,6 @@
 export class Deck {
   cards = [];
   discard = [];
-  originalOrder;
 
   constructor() {}
 
