@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { createCamera, createRenderer } from "../config/setup";
-import { Constants } from "../config/constants";
-import { Table } from "./table";
+import { createCamera, createRenderer } from "./config/setup";
+import { Constants } from "./config/constants";
+import { Table } from "./components/table";
 
 let gameOptions = {
   cardsDrawn: 1,

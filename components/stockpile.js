@@ -13,27 +13,7 @@ export class Stockpile {
   constructor(position, meshPosition, scene, highlightZones, cardsDrawn) {
     this.position = position;
     this.cardsDrawn = cardsDrawn;
-
-    const color = highlightZones ? 0xffffff : 0x078c11;
-    this.mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(2.5, 3, 0.01),
-      new THREE.MeshBasicMaterial({ color: color })
-    );
-    this.mesh.name = this.name;
-    this.mesh.position.set(meshPosition.x, meshPosition.y, meshPosition.z);
-    scene.add(this.mesh);
-
-    this.wasteMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(3.5, 3, 0.01),
-      new THREE.MeshBasicMaterial({ color: color })
-    );
-    this.wasteMesh.name = "waste";
-    this.wasteMesh.position.set(
-      meshPosition.x - 3.55,
-      meshPosition.y,
-      meshPosition.z
-    );
-    scene.add(this.wasteMesh);
+    this.createMeshes(meshPosition, scene, highlightZones);
   }
 
   drawCards() {
@@ -63,14 +43,12 @@ export class Stockpile {
     if (!this.waste?.length) return;
 
     for (let i = this.waste.length - 1; i >= 0; i--) {
-      this.waste[i].move(
-        {
-          x: this.position.x - 2.3 - i * 0.43,
-          y: this.position.y,
-          z: this.position.z + 0.01 * (this.waste.length - i),
-        },
-        this.name
-      );
+      const pos = {
+        x: this.position.x - 2.3 - i * 0.43,
+        y: this.position.y,
+        z: this.position.z + 0.01 * (this.waste.length - i),
+      };
+      this.waste[i].move(pos, this.name);
     }
   }
 
@@ -92,5 +70,28 @@ export class Stockpile {
       if (card.up) card.flip();
       card.move(this.position, this.name);
     });
+  }
+
+  createMeshes(meshPosition, scene, highlightZones) {
+    const color = highlightZones ? 0xffffff : 0x078c11;
+    this.mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 3, 0.01),
+      new THREE.MeshBasicMaterial({ color: color })
+    );
+    this.mesh.name = this.name;
+    this.mesh.position.set(meshPosition.x, meshPosition.y, meshPosition.z);
+    scene.add(this.mesh);
+
+    this.wasteMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(3.5, 3, 0.01),
+      new THREE.MeshBasicMaterial({ color: color })
+    );
+    this.wasteMesh.name = "waste";
+    this.wasteMesh.position.set(
+      meshPosition.x - 3.55,
+      meshPosition.y,
+      meshPosition.z
+    );
+    scene.add(this.wasteMesh);
   }
 }
