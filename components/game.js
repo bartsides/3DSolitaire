@@ -13,6 +13,7 @@ let loading = true,
   scene,
   renderer,
   clickableObjects = [],
+  menuObjects = [],
   raycaster,
   camera,
   table;
@@ -52,8 +53,10 @@ class Game {
       (event.clientX / Constants.width) * 2 - 1,
       -(event.clientY / Constants.height) * 2 + 1
     );
-
     raycaster.setFromCamera(mouse, camera);
+
+    const menuIntersections = raycaster.intersectObjects(menuObjects, false);
+    for (let i = 0; i < menuIntersections.length; i++) {}
 
     const intersections = raycaster.intersectObjects(clickableObjects, false);
     for (let i = 0; i < intersections.length; i++) {
@@ -71,21 +74,21 @@ class Game {
 
       const foundation = table.foundations.find((f) => f.name === name);
       if (foundation) {
-        foundationClicked(foundation);
-        return;
+        if (foundationClicked(foundation)) return;
+        continue;
       }
 
       const column = table.columns.find((c) => c.name === name);
       if (column) {
-        columnClicked(column);
-        return;
+        if (columnClicked(column)) return;
+        continue;
       }
 
       const card = table.originalDeck.cards.find((c) => c.name === name);
       if (card && card.up) {
+        if (cardClicked(card)) return;
+        continue;
       }
-
-      // TODO: Check for cards
     }
   }
 }
@@ -96,29 +99,58 @@ var stockpileClicked = function () {
 
 var wasteClicked = function () {
   if (!table.stockpile.waste.length) return;
-  playCards([table.stockpile.waste[0]], table.stockpile);
+  return playCards([table.stockpile.waste[0]], table.stockpile);
 };
 
 var foundationClicked = function (foundation) {
   if (!foundation.cards.length) return;
-  playCards([foundation.cards[0]], foundation);
+  return playCards([foundation.cards[0]], foundation);
 };
 
-var columnClicked = function (column) {
-  for (let i = column.cards.length - 1; i >= 0; i--) {
+var columnClicked = function (column, card) {
+  let i = column.cards.length - 1;
+  if (card) {
+    // Start with index of card clicked
+    for (let j = 0; j < column.cards.length; j++) {
+      if (card.name === column.cards[j].name) {
+        i = j;
+        break;
+      }
+    }
+  }
+
+  for (; i >= 0; i--) {
     if (!column.cards[i].up) continue;
 
     const cards = [];
     for (let j = i; j >= 0; j--) cards.push(column.cards[j]);
 
-    playCards(cards, column);
-    return;
+    return playCards(cards, column);
+  }
+};
+
+var cardClicked = function (card) {
+  if (card.parent === "stockpile") {
+    // Cards in stockpile are always face down so if a card has
+    // been clicked it's in the waste pile
+    wasteClicked();
+    return true;
+  }
+
+  if (card.parent.includes("foundation")) {
+    const number = parseInt(card.parent[card.parent.length - 1]);
+    return foundationClicked(table.foundations[number]);
+  }
+
+  if (card.parent.includes("column")) {
+    const number = parseInt(card.parent[card.parent.length - 1]);
+    return columnClicked(table.columns[number], card);
   }
 };
 
 var playCards = function (cards, source) {
   let plays = findPlays(cards, source);
-  if (!plays.foundation && !plays.columnPlays.length) return;
+  if (!plays.foundation && !plays.columnPlays.length) return false;
 
   // TODO: Smarter logic on which action to take
   // TODO: Handle scenario where best play is to move top / last card to foundation
@@ -136,9 +168,11 @@ var playCards = function (cards, source) {
 
   if (destination) {
     applyPlay(selectedCards, source, destination);
+    return true;
   } else {
     console.error("unable to determine move", selectedPlay);
   }
+  return false;
 };
 
 var applyPlay = function (cards, source, destination) {

@@ -46,11 +46,12 @@ export class Column {
     let ySpacer = 0.5;
     let zSpacer = 0.01;
     for (let i = 0; i < this.cards.length; i++) {
-      this.cards[i].move({
+      const pos = {
         x: this.position.x,
         y: this.position.y + ySpacer * (this.cards.length - i),
         z: this.position.z + zSpacer * (this.cards.length - i),
-      });
+      };
+      this.cards[i].move(pos, this.name);
     }
   }
 }

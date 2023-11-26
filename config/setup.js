@@ -58,15 +58,15 @@ function createLight(scene) {
 }
 
 function createTable(scene, clickableObjects, gameOptions) {
-  let columns = [],
-    foundations = [];
+  let columns = [];
+  let foundations = [];
 
-  let depth = 0.0001;
+  let cubeDepth = 0.0001;
   let cube = new THREE.Mesh(
-    new THREE.BoxGeometry(22, 14.5, depth),
+    new THREE.BoxGeometry(22, 14.5, cubeDepth),
     new THREE.MeshBasicMaterial({ color: 0x078c11 })
   );
-  cube.translateZ(-depth);
+  cube.translateZ(-cubeDepth);
   scene.add(cube);
 
   let columnPositions = [

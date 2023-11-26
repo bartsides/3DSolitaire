@@ -12,6 +12,7 @@ export class Card {
   up = false;
   red;
   position;
+  parent;
   name;
   callback;
 
@@ -31,9 +32,10 @@ export class Card {
     this.card.rotateX(Math.PI);
   }
 
-  move(position) {
+  move(position, parent) {
     // Cards have y and z coordinates flipped. Correcting here.
     this.position = position;
+    this.parent = parent;
     this.card.position.set(position.x, position.z, position.y);
   }
 

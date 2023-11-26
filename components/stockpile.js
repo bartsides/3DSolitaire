@@ -40,7 +40,7 @@ export class Stockpile {
     // TODO: Add discard
     this.waste.forEach((card) => {
       this.deck.cards.push(card);
-      card.move(this.position);
+      card.move(this.position, this.name);
       card.flip();
     });
     this.waste = [];
@@ -63,11 +63,14 @@ export class Stockpile {
     if (!this.waste?.length) return;
 
     for (let i = this.waste.length - 1; i >= 0; i--) {
-      this.waste[i].move({
-        x: this.position.x - 2.3 - i * 0.43,
-        y: this.position.y,
-        z: this.position.z + 0.01 * (this.waste.length - i),
-      });
+      this.waste[i].move(
+        {
+          x: this.position.x - 2.3 - i * 0.43,
+          y: this.position.y,
+          z: this.position.z + 0.01 * (this.waste.length - i),
+        },
+        this.name
+      );
     }
   }
 
@@ -87,7 +90,7 @@ export class Stockpile {
 
     this.deck.cards.forEach((card) => {
       if (card.up) card.flip();
-      card.move(this.position);
+      card.move(this.position, this.name);
     });
   }
 }

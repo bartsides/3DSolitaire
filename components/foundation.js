@@ -44,15 +44,16 @@ export class Foundation {
   recalculate() {
     for (let i = 0; i < this.cards.length; i++) {
       const card = this.cards[i];
-      if (i === 0) {
-        card.move({
-          x: this.position.x,
-          y: this.position.y,
-          z: this.position.z + 0.01,
-        });
-      } else {
-        card.move(this.position);
-      }
+      const pos =
+        i === 0
+          ? {
+              x: this.position.x,
+              y: this.position.y,
+              z: this.position.z + 0.01,
+            }
+          : this.position;
+
+      card.move(pos, this.name);
     }
   }
 }
