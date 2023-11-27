@@ -54,4 +54,8 @@ export class Column {
       this.cards[i].move(pos, this.name);
     }
   }
+
+  tick(delta) {
+    this.cards.forEach((c) => c.tick(delta));
+  }
 }

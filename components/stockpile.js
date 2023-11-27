@@ -94,4 +94,9 @@ export class Stockpile {
     );
     scene.add(this.wasteMesh);
   }
+
+  tick(delta) {
+    this.deck?.cards.forEach((c) => c.tick(delta));
+    this.waste?.forEach((c) => c.tick(delta));
+  }
 }

@@ -16,11 +16,19 @@ let loading = true,
   menuObjects = [],
   raycaster,
   camera,
-  table;
+  table,
+  clock;
 
 function render() {
   requestAnimationFrame(render);
+
+  animate(clock.getDelta());
+
   renderer.render(scene, camera);
+}
+
+function animate(delta) {
+  table.tick(delta);
 }
 
 class Game {
@@ -31,6 +39,7 @@ class Game {
     scene = new THREE.Scene();
     raycaster = new THREE.Raycaster();
     table = new Table(gameOptions);
+    clock = new THREE.Clock();
 
     render();
 
@@ -48,6 +57,9 @@ class Game {
 
   onClick(event) {
     event.preventDefault();
+
+    // Complete animations
+    animate(100);
 
     const mouse = new THREE.Vector2(
       (event.clientX / Constants.width) * 2 - 1,

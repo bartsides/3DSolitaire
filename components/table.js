@@ -51,6 +51,12 @@ class Table {
     this.stockpile.drawCards();
   }
 
+  tick(delta) {
+    this.columns.forEach((c) => c.tick(delta));
+    this.foundations.forEach((f) => f.tick(delta));
+    this.stockpile?.tick(delta);
+  }
+
   createTable(scene, clickableObjects) {
     let depth = 0.0001;
     let cube = new THREE.Mesh(

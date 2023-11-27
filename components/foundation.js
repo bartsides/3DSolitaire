@@ -42,6 +42,8 @@ export class Foundation {
   }
 
   recalculate() {
+    if (!this.cards?.length) return;
+
     for (let i = 0; i < this.cards.length; i++) {
       const card = this.cards[i];
       const pos =
@@ -55,5 +57,9 @@ export class Foundation {
 
       card.move(pos, this.name);
     }
+  }
+
+  tick(delta) {
+    this.cards.forEach((c) => c.tick(delta));
   }
 }
