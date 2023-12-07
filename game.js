@@ -70,6 +70,7 @@ class Game {
     const menuIntersections = raycaster.intersectObjects(menuObjects, false);
     for (let i = 0; i < menuIntersections.length; i++) {}
 
+    let skipCards = false;
     const intersections = raycaster.intersectObjects(clickableObjects, false);
     for (let i = 0; i < intersections.length; i++) {
       const name = intersections[i].object.name;
@@ -96,10 +97,15 @@ class Game {
         continue;
       }
 
-      const card = table.originalDeck.cards.find((c) => c.name === name);
-      if (card && card.up) {
-        if (cardClicked(card)) return;
-        continue;
+      if (!skipCards) {
+        const card = table.originalDeck.cards.find((c) => c.name === name);
+        if (card && card.up) {
+          if (cardClicked(card)) return;
+
+          // If a card is clicked in a column, try to play it and then try the column
+          skipCards = true;
+          continue;
+        }
       }
     }
   }
@@ -131,7 +137,8 @@ var columnClicked = function (column, card) {
     }
   }
 
-  for (; i >= 0; i--) {
+  let stop = card ? i : 0;
+  for (; i >= stop; i--) {
     if (!column.cards[i].up) continue;
 
     const cards = [];

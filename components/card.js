@@ -17,7 +17,6 @@ export class Card {
   animationMixer;
   flipAction;
   moveAction;
-
   rotations = {
     up: new THREE.Quaternion(0, 0, 0, 1),
     down: new THREE.Quaternion(0, 0, 1, 0),
