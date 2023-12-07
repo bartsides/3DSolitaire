@@ -41,7 +41,7 @@ class Table {
     for (let j = 0; j < 7; j++) {
       for (let i = j; i < 7; i++) {
         const card = this.stockpile.drawCard();
-        if (i === j) card.flip();
+        if (i === j) card.flip = true;
         this.columns[i].addCard(card);
       }
     }

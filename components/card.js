@@ -9,6 +9,7 @@ export class Card {
   rank;
   mesh;
   up = false;
+  flip = false;
   red;
   position = new THREE.Vector3(0, 0, 0);
   parent;
@@ -21,7 +22,6 @@ export class Card {
     up: new THREE.Quaternion(0, 0, 0, 1),
     down: new THREE.Quaternion(0, 0, 1, 0),
   };
-  animationTimes = [0, Constants.animationTime];
 
   constructor(suit, face, rank, mesh) {
     this.suit = suit;
@@ -39,26 +39,19 @@ export class Card {
     this.mesh.quaternion.set(q.x, q.y, q.z, q.w);
   }
 
-  flip() {
-    const start = this.up ? this.rotations.up : this.rotations.down;
-    this.up = !this.up;
-    const end = this.up ? this.rotations.up : this.rotations.down;
+  move(position, parent) {
+    this.parent = parent;
 
-    const values = start.toArray().concat(end.toArray());
-    const rotationKF = new THREE.QuaternionKeyframeTrack(
-      ".quaternion",
-      this.animationTimes,
-      values
-    );
-    const clip = new THREE.AnimationClip("flip", -1, [rotationKF]);
-    if (this.flipAction) this._removeAction(this.flipAction);
-    this.flipAction = this.animationMixer.clipAction(clip);
-    this._playAction(this.flipAction);
+    // Compare positions and determine if card is actually moving
+    if (this.flip) {
+      this._moveAndFlip(position);
+    } else {
+      this._move(position);
+    }
   }
 
-  move(position, parent) {
+  _move(position) {
     // Cards have y and z coordinates flipped. Correcting here.
-    const times = [0, Constants.animationTime];
     const values = [
       this.position.x,
       this.position.z,
@@ -67,21 +60,66 @@ export class Card {
       position.z,
       position.y,
     ];
+    this.position = position;
+
     const positionKF = new THREE.VectorKeyframeTrack(
       ".position",
-      times,
+      [0, Constants.animationTime],
       values
     );
     const clip = new THREE.AnimationClip(`move card to ${this.parent}`, -1, [
       positionKF,
     ]);
-
     if (this.moveAction) this._removeAction(this.moveAction);
     this.moveAction = this.animationMixer.clipAction(clip);
     this._playAction(this.moveAction);
+  }
 
+  _moveAndFlip(position) {
+    this._flip();
+
+    // Cards have y and z coordinates flipped. Correcting here.
+    const values = [
+      this.position.x,
+      this.position.z,
+      this.position.y,
+      this.position.x,
+      this.position.z,
+      this.position.y - 1,
+      position.x,
+      position.z,
+      position.y,
+    ];
     this.position = position;
-    this.parent = parent;
+
+    const positionKF = new THREE.VectorKeyframeTrack(
+      ".position",
+      [0, Constants.animationTime / 3, Constants.animationTime],
+      values
+    );
+    const clip = new THREE.AnimationClip(`move card to ${this.parent}`, -1, [
+      positionKF,
+    ]);
+    if (this.moveAction) this._removeAction(this.moveAction);
+    this.moveAction = this.animationMixer.clipAction(clip);
+    this._playAction(this.moveAction);
+  }
+
+  _flip() {
+    this.flip = false;
+    const start = this.up ? this.rotations.up : this.rotations.down;
+    this.up = !this.up;
+    const end = this.up ? this.rotations.up : this.rotations.down;
+
+    const rotationKF = new THREE.QuaternionKeyframeTrack(
+      ".quaternion",
+      [0, Constants.animationTime / 3, Constants.animationTime],
+      start.toArray().concat(start.toArray()).concat(end.toArray())
+    );
+    const clip = new THREE.AnimationClip("flip", -1, [rotationKF]);
+    if (this.flipAction) this._removeAction(this.flipAction);
+    this.flipAction = this.animationMixer.clipAction(clip);
+    this._playAction(this.flipAction);
   }
 
   _playAction(action) {

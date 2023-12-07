@@ -20,15 +20,15 @@ export class Stockpile {
     // TODO: Add discard
     this.waste.forEach((card) => {
       this.deck.cards.push(card);
+      card.flip = true;
       card.move(this.position, this.name);
-      card.flip();
     });
     this.waste = [];
 
     const cardsToDraw = Math.min(this.cardsDrawn, this.deck.cards.length);
     for (let i = 0; i < cardsToDraw; i++) {
       const card = this.drawCard();
-      card.flip();
+      card.flip = true;
       this.waste.push(card);
     }
 
@@ -67,7 +67,7 @@ export class Stockpile {
     }
 
     this.deck.cards.forEach((card) => {
-      if (card.up) card.flip();
+      if (card.up) card.flip = true;
       card.move(this.position, this.name);
     });
   }

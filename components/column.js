@@ -36,7 +36,7 @@ export class Column {
 
   removeCard(card) {
     this.cards.splice(this.cards.indexOf(card), 1);
-    if (this.cards.length && !this.cards[0].up) this.cards[0].flip();
+    if (this.cards.length && !this.cards[0].up) this.cards[0].flip = true;
     this.recalculate();
   }
 

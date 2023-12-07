@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { createCamera, createRenderer } from "./config/setup";
 import { Constants } from "./config/constants";
 import { Table } from "./components/table";
+import { Faces } from "./config/faces";
 
 let gameOptions = {
   cardsDrawn: 1,
@@ -205,6 +206,8 @@ var findPlays = function (cards, source) {
   let foundation,
     columnPlays = [];
 
+  if (!cards?.length) return { foundation, columnPlays };
+
   // Only top card can move to foundation
   const topCard = cards[cards.length - 1];
   let f = findFoundation(topCard);
@@ -212,9 +215,24 @@ var findPlays = function (cards, source) {
     foundation = f;
   }
 
+  let skipFirstCard = false;
+  if (source.name.includes("column")) {
+    const baseCard = source.cards[source.cards.length - 1];
+    const firstCard = cards[0];
+    skipFirstCard =
+      baseCard.face === Faces[Faces.length - 1] &&
+      baseCard.face === firstCard.face &&
+      baseCard.suit === firstCard.suit;
+  }
+
   for (let i = 0; i < cards.length; i++) {
     let cols = [],
       card = cards[i];
+
+    if (skipFirstCard) {
+      // King is already base card in column. No need to check other columns.
+      continue;
+    }
 
     table.columns.forEach((col) => {
       if (col.name !== source.name && col.isValidPlay(card)) {
